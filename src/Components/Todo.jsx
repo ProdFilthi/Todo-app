@@ -1,48 +1,68 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BiBook, BiTrash } from "react-icons/bi";
 
 const Todo = () => {
-  const [todos, setTodos] = useState([]);
+  const [todos, setTodos] = useState(() => {
+    const savedTodos = localStorage.getItem("todos");
+    try {
+      return savedTodos ? JSON.parse(savedTodos) : [];
+    } catch (error) {
+      console.error("Error parsing todos from localStorage:", error);
+      return [];
+    }
+  });
+
   const [tasks, setTasks] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }, [todos]);
+
   const handleInputChange = (e) => setTasks(e.target.value);
+
   const addTask = () => {
-    setTodos([...todos, { text: tasks, completed: false }]);
-    setTasks("");
+    if (tasks.trim() !== "") {
+      setTodos([...todos, { text: tasks, completed: false }]);
+      setTasks("");
+    }
   };
-  const onKeyPress = (e) => {
+
+  const keyPress = (e) => {
     if (e.key === "Enter") {
       addTask();
     }
   };
-  const deleteTask = (todoIndex) => {
-    let updatedTodos = todos.filter((_, index) => todoIndex !== index);
+
+  const deleteTask = (index) => {
+    const updatedTodos = todos.filter((_, i) => i !== index);
     setTodos(updatedTodos);
   };
-  const toggleCompletedTask = (index) => {
-    setTodos(
-      todos.map((todo, i) =>
-        i === index ? { ...todo, completed: !todo.completed } : todo
-      )
+
+  const toggleCompleted = (index) => {
+    const updatedTodos = todos.map((todo, i) =>
+      i === index ? { ...todo, completed: !todo.completed } : todo
     );
+    setTodos(updatedTodos);
   };
+
   return (
-    <div className="bg-neutral-100 shadow rounded-md shadow-black w-96 h-96">
-      <div className="flex items-center justify-between px-4 py-4 text-xl">
-        <h1>Todo App</h1>
-        <BiBook />
+    <div className="bg-neutral-300 min-w-96 min-h-96 rounded-md shadow-md shadow-blue-500 p-4">
+      <div className="flex items-center justify-between px-2 py-2">
+        <h1 className="text-2xl">Todo App</h1>
+        <BiBook className="text-2xl" />
       </div>
-      <div className="flex items-center justify-between px-4 py-4">
+      <div className="flex items-center justify-center mb-4">
         <input
-          onKeyDown={onKeyPress}
-          className="py-4 px-4 rounded-l-md w-64"
+          onKeyDown={keyPress}
           value={tasks}
           onChange={handleInputChange}
           type="text"
           placeholder="Add Task..."
+          className="py-2 rounded-l-md px-4 outline-none border-2 border-blue-500"
         />
         <button
-          className="py-4 px-4 w-24 bg-blue-500 rounded-r-md text-white"
           onClick={addTask}
+          className="bg-blue-500 text-white rounded-r-md w-32 h-10"
         >
           Add Task
         </button>
@@ -50,15 +70,20 @@ const Todo = () => {
       <div>
         {todos.map((todo, index) => (
           <div
-            className={`flex items-center justify-between px-8 py-2 cursor-pointer ${
-              todo.completed ? "line-through text-blue-500" : ""
-            }`}
             key={index}
+            className="flex items-center justify-between px-8 py-2 mt-2 bg-white shadow rounded-md"
           >
-            <div onClick={() => toggleCompletedTask(index)}>{todo.text}</div>
+            <span
+              onClick={() => toggleCompleted(index)}
+              className={`cursor-pointer ${
+                todo.completed ? "line-through text-blue-500" : ""
+              }`}
+            >
+              {todo.text}
+            </span>
             <BiTrash
+              className="cursor-pointer text-red-500"
               onClick={() => deleteTask(index)}
-              className="cursor-pointer text-orange-500"
             />
           </div>
         ))}
